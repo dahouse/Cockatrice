@@ -40,6 +40,7 @@
 #include "pixmapgenerator.h"
 #include "rng_sfmt.h"
 #include "soundengine.h"
+#include "debugwidget.h"
 
 //Q_IMPORT_PLUGIN(qjpeg)
 
@@ -48,6 +49,7 @@ QTranslator *translator, *qtTranslator;
 SettingsCache *settingsCache;
 RNG_Abstract *rng;
 SoundEngine *soundEngine;
+DebugWidget *debugWidget;
 
 const QString translationPrefix = "cockatrice";
 #ifdef TRANSLATION_PATH
@@ -103,7 +105,8 @@ int main(int argc, char *argv[])
 #if QT_VERSION < 0x050000
         qInstallMsgHandler(myMessageOutput);
 #else
-        qInstallMessageHandler(myMessageOutput);
+		debugWidget = new DebugWidget();
+		debugWidget->show();
 #endif
     }
 #ifdef Q_OS_WIN
@@ -229,6 +232,7 @@ int main(int argc, char *argv[])
     PingPixmapGenerator::clear();
     CountryPixmapGenerator::clear();
     UserLevelPixmapGenerator::clear();
+	delete debugWidget;
 
     return 0;
 }
