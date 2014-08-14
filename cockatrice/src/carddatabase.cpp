@@ -14,6 +14,8 @@
 #include <QNetworkRequest>
 #include <QDebug>
 #include <QImageReader>
+#include <QJsonDocument>
+#include <QJsonArray>
 
 const int CardDatabase::versionNeeded = 3;
 
@@ -577,7 +579,7 @@ static QXmlStreamWriter &operator<<(QXmlStreamWriter &xml, const CardInfo *info)
 }
 
 CardDatabase::CardDatabase(QObject *parent)
-    : QObject(parent), noCard(0), loadStatus(NotLoaded)
+	: QObject(parent), noCard(0), loadStatus(NotLoaded), isJson(false)
 {
     connect(settingsCache, SIGNAL(picsPathChanged()), this, SLOT(picsPathChanged()));
     connect(settingsCache, SIGNAL(cardDatabasePathChanged()), this, SLOT(loadCardDatabase()));
@@ -765,6 +767,97 @@ void CardDatabase::loadCardsFromXml(QXmlStreamReader &xml)
     }
 }
 
+void CardDatabase::loadSetsFromJson(QJsonObject &json)
+{
+	if (json.keys().size() > 0) {
+		QJsonObject::const_iterator i;
+		for (i = json.constBegin(); i != json.constEnd(); ++i) {
+			QJsonObject jsonSet = (*i).toObject();
+			sets.insert(jsonSet.value("code").toString(), new CardSet(jsonSet.value("code").toString(), jsonSet.value("name").toString()));
+			loadCardsFromJson(jsonSet);
+		}
+	}
+}
+
+void CardDatabase::loadCardsFromJson(QJsonObject &jsonSet)
+{
+	if (jsonSet.contains("cards")) {
+		QString setName = jsonSet.value("code").toString();
+		QJsonArray jsonCards = jsonSet.value("cards").toArray();
+		QString url("http://mtgimage.com/set/");
+		QJsonArray::const_iterator i;
+		for (i = jsonCards.constBegin(); i != jsonCards.constEnd(); ++i) {
+			QJsonObject jsonCard = (*i).toObject();
+			QString name = jsonCard.value("name").toString();
+
+			if (cards.contains(name)) {
+				CardInfo *card = cards.value(name);
+				if (!card->getSets().contains(sets.value(setName))) {
+					card->addToSet(sets.value(setName));
+
+					if (jsonCard.contains("multiverseid"))
+						card->setMuId(setName, jsonCard.value("multiverseid").toInt());
+					else if (jsonCard.contains("imageName")) {
+						QString imageName = jsonCard.value("imageName").toString();
+						card->setCustomPicURL(setName, url + setName + "/" + imageName + ".jpg");
+						card->setCustomPicURLHq(setName, url + setName + "/" + imageName + ".hq.jpg");
+					}
+				}
+			}
+			else {
+				QString manacost, type, pt, text;
+				QStringList colors;
+				QStringMap customPicURLs, customPicURLsHq;
+				MuidMap muids;
+				SetList sets;
+				int tableRow = 0;
+				int loyalty = 0;
+				bool cipt = false;
+				bool isToken = false;
+
+				manacost = jsonCard.value("manaCost").toString();
+				type = jsonCard.value("type").toString();
+				if (jsonCard.contains("power") || jsonCard.contains("toughness"))
+					pt = jsonCard.value("power").toString() + "/" + jsonCard.value("toughness").toString();
+				text = jsonCard.value("text").toString();
+				sets.append(getSet(setName));
+
+				QJsonArray jsonColors = jsonCard.value("colors").toArray();
+				for (int j = 0; j < jsonColors.size(); j++)
+					colors << jsonColors[j].toString();
+
+				if (jsonCard.contains("multiverseid")) {
+					muids[setName] = jsonCard.value("multiverseid").toInt();
+				}
+				else if (jsonCard.contains("imageName")) {
+					QString imageName = jsonCard.value("imageName").toString();
+					customPicURLs[setName] = url + setName + "/" + imageName + ".jpg";
+					customPicURLsHq[setName] = url + setName + "/" + imageName + ".hq.jpg";
+				}
+
+				tableRow = 1;
+				if (jsonCard.contains("types")) {
+					QJsonArray jsonTypes = jsonCard.value("types").toArray();
+					if (jsonTypes.contains("Land") || jsonTypes.contains("Artifact"))
+						tableRow = 0;
+					else if (jsonTypes.contains("Sorcery") || jsonTypes.contains("Instant"))
+						tableRow = 3;
+					else if (jsonTypes.contains("Creature"))
+						tableRow = 2;
+				}
+
+				if (jsonCard.contains("loyalty"))
+					loyalty = jsonCard.value("loyalty").toInt();
+
+				cipt = text.contains(name + " enters the battlefield tapped.");
+				isToken = jsonCard.value("type").toString() == "token";
+
+				addCard(new CardInfo(this, name, isToken, manacost, type, pt, text, colors, loyalty, cipt, tableRow, sets, customPicURLs, customPicURLsHq, muids));
+			}
+		}
+	}
+}
+
 CardInfo *CardDatabase::getCardFromMap(CardNameMap &cardMap, const QString &cardName, bool createIfNotFound) {
     if (cardName.isEmpty())
         return noCard;
@@ -786,26 +879,45 @@ LoadStatus CardDatabase::loadFromFile(const QString &fileName)
     if (!file.isOpen())
         return FileError;
 
-    QXmlStreamReader xml(&file);
-    while (!xml.atEnd()) {
-        if (xml.readNext() == QXmlStreamReader::StartElement) {
-            if (xml.name() != "cockatrice_carddatabase")
-                return Invalid;
-            int version = xml.attributes().value("version").toString().toInt();
-            if (version < versionNeeded) {
-                qDebug() << "loadFromFile(): Version too old: " << version;
-                return VersionTooOld;
-            }
-            while (!xml.atEnd()) {
-                if (xml.readNext() == QXmlStreamReader::EndElement)
-                    break;
-                if (xml.name() == "sets")
-                    loadSetsFromXml(xml);
-                else if (xml.name() == "cards")
-                    loadCardsFromXml(xml);
-            }
-        }
-    }
+	if (fileName.endsWith(".json")) {
+		qDebug() << "Trying to load data from json file " + fileName;
+		QJsonParseError jsonErr;
+		QJsonDocument jsonDoc(QJsonDocument::fromJson(file.readAll(), &jsonErr));
+		if (jsonErr.error != QJsonParseError::NoError) {
+			qDebug() << jsonErr.errorString();
+			return Invalid;
+		}
+		QJsonObject jsonDB = jsonDoc.object();
+		loadSetsFromJson(jsonDB);
+		isJson = true;
+	}
+	else {
+		QXmlStreamReader xml(&file);
+		while (!xml.atEnd()) {
+			if (xml.readNext() == QXmlStreamReader::StartElement) {
+				if (xml.name() != "cockatrice_carddatabase")
+					return Invalid;
+				int version = xml.attributes().value("version").toString().toInt();
+				if (version < versionNeeded) {
+					qDebug() << "loadFromFile(): Version too old: " << version;
+					return VersionTooOld;
+				}
+				if (isJson) {
+					qWarning() << "Loading " + fileName + " even though one ore more json files have already been loaded. Existing card data will be overwritten.";
+					isJson = false; // Database not reliably filled with json data anymore, disable json dependent features
+				}
+				while (!xml.atEnd()) {
+					if (xml.readNext() == QXmlStreamReader::EndElement)
+						break;
+					if (xml.name() == "sets")
+						loadSetsFromXml(xml);
+					else if (xml.name() == "cards")
+						loadCardsFromXml(xml);
+				}
+			}
+		}
+	}
+
     qDebug() << cards.size() << "cards in" << sets.size() << "sets loaded";
 
     if (cards.isEmpty()) return NoCards;
