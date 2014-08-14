@@ -1,6 +1,6 @@
 # Cockatrice
 
-[![Build Status](https://travis-ci.org/Daenyth/Cockatrice.svg?branch=master)](https://travis-ci.org/Daenyth/Cockatrice)
+[Dahou.se](http://dahou.se) fork of Cockatrice.
 
 Cockatrice is an open-source multiplatform software for playing card games,
 such as Magic: The Gathering, over a network. It is fully client-server based
