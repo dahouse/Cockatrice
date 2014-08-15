@@ -789,7 +789,15 @@ void CardDatabase::loadCardsFromJson(QJsonObject &jsonSet)
 		for (i = jsonCards.constBegin(); i != jsonCards.constEnd(); ++i) {
 			QJsonObject jsonCard = (*i).toObject();
 			QString name = jsonCard.value("name").toString();
+			QString layout = jsonCard.value("layout").toString();
 
+			if (layout == "split") {
+				if (jsonCard.contains("names")) {
+					QJsonArray names = jsonCard.value("names").toArray();
+					if (names.size() > 1) name = names[0].toString() + " // " + names[1].toString();
+				}
+			}
+			
 			if (cards.contains(name)) {
 				CardInfo *card = cards.value(name);
 				if (!card->getSets().contains(sets.value(setName))) {
@@ -802,6 +810,14 @@ void CardDatabase::loadCardsFromJson(QJsonObject &jsonSet)
 						card->setCustomPicURL(setName, url + setName + "/" + imageName + ".jpg");
 						card->setCustomPicURLHq(setName, url + setName + "/" + imageName + ".hq.jpg");
 					}
+				}
+				else if (layout == "split") {
+					bool first = card->getName().startsWith(jsonCard.value("name").toString(), Qt::CaseInsensitive);
+					card->setManaCost(QString(first ? "%1 // %2" : "%2 // %1").arg(card->getManaCost()).arg(jsonCard.value("manaCost").toString()));
+					card->setCardType(QString(first ? "%1 // %2" : "%2 // %1").arg(card->getCardType()).arg(jsonCard.value("type").toString()));
+					if (card->getPowTough() != "" && jsonCard.contains("power") && jsonCard.contains("toughness"))
+						card->setPowTough(QString(first ? "%1 // %2" : "%2 // %1").arg(card->getPowTough()).arg(jsonCard.value("power").toString() + "/" + jsonCard.value("toughness").toString()));
+					card->setText(QString(first ? "%1\n\n---\n\n%2" : "%2\n\n---\n\n%1").arg(card->getText()).arg(jsonCard.value("text").toString()));
 				}
 			}
 			else {
