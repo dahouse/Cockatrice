@@ -82,6 +82,7 @@ public slots:
     void logAlwaysRevealTopCard(Player *player, CardZone *zone, bool reveal);
     void logSetActivePlayer(Player *player);
     void logSetActivePhase(int phase);
+	void logMomir(Player *player, int cmc);
     void containerProcessingStarted(const GameEventContext &context);
     void containerProcessingDone();
 public:

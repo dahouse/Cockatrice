@@ -1,5 +1,6 @@
 #include "carddatabase.h"
 #include "settingscache.h"
+#include "rng_abstract.h"
 #include <QDir>
 #include <QDirIterator>
 #include <QFile>
@@ -365,7 +366,9 @@ CardInfo::CardInfo(CardDatabase *_db,
       cipt(_cipt),
       tableRow(_tableRow),
       pixmap(NULL),
-	  doubleFaced(NULL)
+	  doubleFaced(NULL),
+	  cmc(0),
+	  hasCmc(false)
 {
     for (int i = 0; i < sets.size(); i++)
         sets[i]->append(this);
@@ -833,9 +836,11 @@ void CardDatabase::loadCardsFromJson(QJsonObject &jsonSet)
 				int cmc = 0;
 				bool cipt = false;
 				bool isToken = false;
+				bool hasCmc = true;
+
+				if (jsonCard.contains("cmc")) cmc = jsonCard.value("cmc").toInt(); else hasCmc = false;
 
 				manacost = jsonCard.value("manaCost").toString();
-				cmc = jsonCard.value("cmc").toInt();
 				type = jsonCard.value("type").toString();
 				if (jsonCard.contains("power") || jsonCard.contains("toughness"))
 					pt = jsonCard.value("power").toString() + "/" + jsonCard.value("toughness").toString();
@@ -873,6 +878,10 @@ void CardDatabase::loadCardsFromJson(QJsonObject &jsonSet)
 				isToken = jsonCard.value("type").toString() == "token";
 
 				CardInfo* card = new CardInfo(this, name, isToken, manacost, type, pt, text, colors, loyalty, cipt, tableRow, sets, customPicURLs, customPicURLsHq, muids);
+				if (hasCmc){
+					card->setCmc(cmc);
+					card->setHasCmc(true);
+				}
 				addCard(card);
 
 				if (layout == "double-faced") {
@@ -1094,4 +1103,23 @@ void CardDatabase::picsPathChanged()
 {
     pictureLoader->setPicsPath(settingsCache->getPicsPath());
     clearPixmapCache();
+}
+
+CardInfo* CardDatabase::getMomir(int cmc)
+{
+	qDebug() << "Attempting to Momir for " + QString::number(cmc) + " mana.";
+	QList<CardInfo*> cardList;
+	CardNameMap::iterator i;
+	for (i = cards.begin(); i != cards.end(); ++i) {
+		CardInfo* card = i.value();
+		if (card->getCardType().contains("Creature") && card->getCmc() == cmc && card->getHasCmc())
+			cardList << card;
+	}
+	if (cardList.size() > 0) {
+		qDebug() << "Found " + QString::number(cardList.size()) + " valid cards.";
+		int rndIndex = rng->rand(0, cardList.size() - 1);
+		qDebug() << "Returning " + cardList[rndIndex]->getName();
+		return cardList[rndIndex];
+	}
+	else return NULL;
 }

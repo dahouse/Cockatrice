@@ -4,6 +4,7 @@
 #include <QInputDialog>
 #include <QPoint>
 #include <QMap>
+#include <QSignalMapper>
 #include "abstractgraphicsitem.h"
 #include "pb/game_event.pb.h"
 #include "pb/card_attributes.pb.h"
@@ -54,6 +55,7 @@ class Event_AttachCard;
 class Event_DrawCards;
 class Event_RevealCards;
 class Event_ChangeZoneProperties;
+class Event_Momir;
 class PendingCommand;
 
 class PlayerArea : public QObject, public QGraphicsItem {
@@ -104,6 +106,7 @@ signals:
     void logStopDumpZone(Player *player, CardZone *zone);
     void logRevealCards(Player *player, CardZone *zone, int cardId, QString cardName, Player *otherPlayer, bool faceDown);
     void logAlwaysRevealTopCard(Player *player, CardZone *zone, bool reveal);
+	void logMomir(Player *player, int cmc);
     
     void sizeChanged();
     void gameConceded();
@@ -112,11 +115,12 @@ public slots:
     void actRollDie();
     void actCreateToken();
     void actCreateAnotherToken();
+	void actMomir(const int &cmc);
     void actShuffle();
     void actDrawCard();
     void actDrawCards();
     void actUndoDraw();
-        void actMulligan();
+    void actMulligan();
     void actMoveTopCardsToGrave();
     void actMoveTopCardsToExile();
     void actMoveTopCardToBottom();
@@ -159,17 +163,17 @@ private slots:
 private:
     TabGame *game;
     QMenu *playerMenu, *handMenu, *graveMenu, *rfgMenu, *libraryMenu, *sbMenu, *countersMenu, *sayMenu, *createPredefinedTokenMenu,
-        *mRevealLibrary, *mRevealTopCard, *mRevealHand, *mRevealRandomHandCard;
+        *mRevealLibrary, *mRevealTopCard, *mRevealHand, *mRevealRandomHandCard, *momirMenu;
     QList<QMenu *> playerLists;
     QList<QAction *> allPlayersActions;
-    QAction *aMoveHandToTopLibrary, *aMoveHandToBottomLibrary, *aMoveHandToGrave, *aMoveHandToRfg,
-        *aMoveGraveToTopLibrary, *aMoveGraveToBottomLibrary, *aMoveGraveToHand, *aMoveGraveToRfg,
-        *aMoveRfgToTopLibrary, *aMoveRfgToBottomLibrary, *aMoveRfgToHand, *aMoveRfgToGrave,
-        *aViewLibrary, *aViewTopCards, *aAlwaysRevealTopCard, *aOpenDeckInDeckEditor, *aMoveTopCardsToGrave, *aMoveTopCardsToExile, *aMoveTopCardToBottom,
-        *aViewGraveyard, *aViewRfg, *aViewSideboard,
-                *aDrawCard, *aDrawCards, *aUndoDraw, *aMulligan, *aShuffle,
-        *aUntapAll, *aRollDie, *aCreateToken, *aCreateAnotherToken,
-        *aCardMenu;
+	QAction *aMoveHandToTopLibrary, *aMoveHandToBottomLibrary, *aMoveHandToGrave, *aMoveHandToRfg,
+		*aMoveGraveToTopLibrary, *aMoveGraveToBottomLibrary, *aMoveGraveToHand, *aMoveGraveToRfg,
+		*aMoveRfgToTopLibrary, *aMoveRfgToBottomLibrary, *aMoveRfgToHand, *aMoveRfgToGrave,
+		*aViewLibrary, *aViewTopCards, *aAlwaysRevealTopCard, *aOpenDeckInDeckEditor, *aMoveTopCardsToGrave, *aMoveTopCardsToExile, *aMoveTopCardToBottom,
+		*aViewGraveyard, *aViewRfg, *aViewSideboard,
+		*aDrawCard, *aDrawCards, *aUndoDraw, *aMulligan, *aShuffle,
+		*aUntapAll, *aRollDie, *aCreateToken, *aCreateAnotherToken,
+		*aCardMenu;
     
     QList<QAction *> aAddCounter, aSetCounter, aRemoveCounter;
     QAction *aPlay,
@@ -209,6 +213,9 @@ private:
 
     QMap<int, AbstractCounter *> counters;
     QMap<int, ArrowItem *> arrows;
+
+	QSignalMapper *signalMapper;
+
     void rearrangeCounters();
     
     void initSayMenu();
@@ -234,6 +241,7 @@ private:
     void eventDrawCards(const Event_DrawCards &event);
     void eventRevealCards(const Event_RevealCards &event);
     void eventChangeZoneProperties(const Event_ChangeZoneProperties &event);
+	void eventMomir(const Event_Momir &event);
 public:
     static const int counterAreaWidth = 55;
     enum CardMenuActionType { cmTap, cmUntap, cmDoesntUntap, cmFlip, cmPeek, cmClone, cmMoveToTopLibrary, cmMoveToBottomLibrary, cmMoveToGraveyard, cmMoveToExile };

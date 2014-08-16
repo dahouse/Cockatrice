@@ -48,6 +48,7 @@
 #include "pb/command_shuffle.pb.h"
 #include "pb/command_stop_dump_zone.pb.h"
 #include "pb/command_undo_draw.pb.h"
+#include "pb/command_momir.pb.h"
 #include "pb/serverinfo_user.pb.h"
 #include "pb/serverinfo_player.pb.h"
 #include "pb/event_attach_card.pb.h"
@@ -71,6 +72,7 @@
 #include "pb/event_set_counter.pb.h"
 #include "pb/event_stop_dump_zone.pb.h"
 #include "pb/event_reveal_cards.pb.h"
+#include "pb/event_momir.pb.h"
 
 #include "pb/context_connection_state_changed.pb.h"
 #include "pb/context_concede.pb.h"
@@ -1060,6 +1062,23 @@ Response::ResponseCode Server_Player::cmdAttachCard(const Command_AttachCard &cm
     return Response::RespOk;
 }
 
+Response::ResponseCode Server_Player::cmdMomir(const Command_Momir &cmd, ResponseContainer &rc, GameEventStorage &ges)
+{
+	if (spectator)
+		return Response::RespFunctionNotAllowed;
+
+	if (!game->getGameStarted())
+		return Response::RespGameNotStarted;
+	if (conceded)
+		return Response::RespContextError;
+
+	Event_Momir event;
+	event.set_cmc(cmd.cmc());
+	ges.enqueueGameEvent(event, playerId);
+
+	return Response::RespOk;
+}
+
 Response::ResponseCode Server_Player::cmdCreateToken(const Command_CreateToken &cmd, ResponseContainer & /*rc*/, GameEventStorage &ges)
 {
     if (spectator)
@@ -1659,6 +1678,7 @@ Response::ResponseCode Server_Player::processGameCommand(const GameCommand &comm
         case GameCommand::DECK_SELECT: return cmdDeckSelect(command.GetExtension(Command_DeckSelect::ext), rc, ges); break;
         case GameCommand::SET_SIDEBOARD_LOCK: return cmdSetSideboardLock(command.GetExtension(Command_SetSideboardLock::ext), rc, ges); break;
         case GameCommand::CHANGE_ZONE_PROPERTIES: return cmdChangeZoneProperties(command.GetExtension(Command_ChangeZoneProperties::ext), rc, ges); break;
+		case GameCommand::MOMIR: return cmdMomir(command.GetExtension(Command_Momir::ext), rc, ges); break;
         default: return Response::RespInvalidCommand;
     }
 }

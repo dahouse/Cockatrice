@@ -60,6 +60,7 @@ class Command_SetSideboardPlan;
 class Command_DeckSelect;
 class Command_SetSideboardLock;
 class Command_ChangeZoneProperties;
+class Command_Momir;
 
 class Server_Player : public Server_ArrowTarget, public ServerInfo_User_Container {
     Q_OBJECT
@@ -155,6 +156,7 @@ public:
     Response::ResponseCode cmdStopDumpZone(const Command_StopDumpZone &cmd, ResponseContainer &rc, GameEventStorage &ges);
     Response::ResponseCode cmdRevealCards(const Command_RevealCards &cmd, ResponseContainer &rc, GameEventStorage &ges);
     Response::ResponseCode cmdChangeZoneProperties(const Command_ChangeZoneProperties &cmd, ResponseContainer &rc, GameEventStorage &ges);
+	Response::ResponseCode cmdMomir(const Command_Momir &cmd, ResponseContainer &rc, GameEventStorage &ges);
     
     Response::ResponseCode processGameCommand(const GameCommand &command, ResponseContainer &rc, GameEventStorage &ges);
     void sendGameEvent(const GameEventContainer &event);

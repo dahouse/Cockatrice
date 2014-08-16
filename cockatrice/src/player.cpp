@@ -39,6 +39,7 @@
 #include "pb/command_create_token.pb.h"
 #include "pb/command_flip_card.pb.h"
 #include "pb/command_game_say.pb.h"
+#include "pb/command_momir.pb.h"
 #include "pb/serverinfo_user.pb.h"
 #include "pb/serverinfo_player.pb.h"
 #include "pb/serverinfo_zone.pb.h"
@@ -64,6 +65,7 @@
 #include "pb/event_draw_cards.pb.h"
 #include "pb/event_reveal_cards.pb.h"
 #include "pb/event_change_zone_properties.pb.h"
+#include "pb/event_momir.pb.h"
 
 PlayerArea::PlayerArea(QGraphicsItem *parentItem)
     : QObject(), QGraphicsItem(parentItem)
@@ -111,6 +113,8 @@ Player::Player(const ServerInfo_User &info, int _id, bool _local, TabGame *_pare
       dialogSemaphore(false),
       deck(0)
 {
+	signalMapper = new QSignalMapper(this);
+
     userInfo = new ServerInfo_User;
     userInfo->CopyFrom(info);
     
@@ -317,6 +321,8 @@ Player::Player(const ServerInfo_User &info, int _id, bool _local, TabGame *_pare
         
         createPredefinedTokenMenu = new QMenu(QString());
 
+		QStringList momircmc = QStringList({ "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "15", "16" });
+
         playerMenu->addSeparator();
         countersMenu = playerMenu->addMenu(QString());
         playerMenu->addSeparator();
@@ -328,6 +334,19 @@ Player::Player(const ServerInfo_User &info, int _id, bool _local, TabGame *_pare
         playerMenu->addAction(aCreateAnotherToken);
         playerMenu->addMenu(createPredefinedTokenMenu);
         playerMenu->addSeparator();
+
+		momirMenu = playerMenu->addMenu(tr("Momir"));
+		for (int i = 0; i < momircmc.size(); i++) {
+			QAction *cmc = new QAction(this);
+			cmc->setText(momircmc.value(i));
+			momirMenu->addAction(cmc);
+			connect(cmc, SIGNAL(triggered()), signalMapper, SLOT(map()));
+			signalMapper->setMapping(cmc, momircmc.value(i).toInt());
+		}
+
+		connect(signalMapper, SIGNAL(mapped(const int &)), this, SLOT(actMomir(const int &)));
+
+		playerMenu->addSeparator();
         sayMenu = playerMenu->addMenu(QString());
         initSayMenu();
         
@@ -972,6 +991,30 @@ void Player::actCreateToken()
     actCreateAnotherToken();
 }
 
+void Player::actMomir(const int &cmc)
+{
+	qDebug() << "Trying to Momir.";
+	CardInfo* card = db->getMomir(cmc);
+	if (card == NULL) return;
+	if (CardInfo* correctedCard = db->getCardBySimpleName(card->getName(), false))
+		card = correctedCard;
+	lastTokenName = card->getName();
+	if (card->getColors().size() == 0) lastTokenColor = QString();
+	else if (card->getColors().size() > 1) lastTokenColor = "m";
+	else if (card->getColors().size() == 1) {
+		lastTokenColor = card->getColors().value(0);
+		lastTokenColor = lastTokenColor.left(1).toLower();
+	}
+	lastTokenPT = card->getPowTough();
+	lastTokenDestroy = true;
+	aCreateAnotherToken->setEnabled(true);
+
+	Command_Momir cmd;
+	cmd.set_cmc(cmc);
+	sendGameCommand(cmd);
+	actCreateAnotherToken();
+}
+
 void Player::actCreateAnotherToken()
 {
     Command_CreateToken cmd;
@@ -1100,6 +1143,11 @@ void Player::eventCreateToken(const Event_CreateToken &event)
     emit logCreateToken(this, card->getName(), card->getPT());
     zone->addCard(card, true, event.x(), event.y());
 
+}
+
+void Player::eventMomir(const Event_Momir &event)
+{
+	emit logMomir(this, event.cmc());
 }
 
 void Player::eventSetCardAttr(const Event_SetCardAttr &event, const GameEventContext &context)
@@ -1446,6 +1494,7 @@ void Player::processGameEvent(GameEvent::GameEventType type, const GameEvent &ev
         case GameEvent::DRAW_CARDS: eventDrawCards(event.GetExtension(Event_DrawCards::ext)); break;
         case GameEvent::REVEAL_CARDS: eventRevealCards(event.GetExtension(Event_RevealCards::ext)); break;
         case GameEvent::CHANGE_ZONE_PROPERTIES: eventChangeZoneProperties(event.GetExtension(Event_ChangeZoneProperties::ext)); break;
+		case GameEvent::MOMIR: eventMomir(event.GetExtension(Event_Momir::ext)); break;
         default: {
             qDebug() << "unhandled game event";
         }

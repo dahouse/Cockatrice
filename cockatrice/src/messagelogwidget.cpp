@@ -407,6 +407,14 @@ void MessageLogWidget::logCreateToken(Player *player, QString cardName, QString 
         appendHtml(tr("%1 creates token: %2%3.", "male").arg(sanitizeHtml(player->getName())).arg(cardLink(cardName)).arg(pt.isEmpty() ? QString() : QString(" (%1)").arg(sanitizeHtml(pt))));
 }
 
+void MessageLogWidget::logMomir(Player *player, int cmc)
+{
+	if (isFemale(player))
+		appendHtml(tr("%1 activates Momir with %2 mana.", "female").arg(sanitizeHtml(player->getName())).arg(sanitizeHtml(QString::number(cmc))));
+	else
+		appendHtml(tr("%1 activates Momir with %2 mana.", "male").arg(sanitizeHtml(player->getName())).arg(sanitizeHtml(QString::number(cmc))));
+}
+
 void MessageLogWidget::logCreateArrow(Player *player, Player *startPlayer, QString startCard, Player *targetPlayer, QString targetCard, bool playerTarget)
 {
     startCard = cardLink(startCard);
@@ -873,6 +881,7 @@ void MessageLogWidget::connectToPlayer(Player *player)
     connect(player, SIGNAL(logUndoDraw(Player *, QString)), this, SLOT(logUndoDraw(Player *, QString)));
     connect(player, SIGNAL(logRevealCards(Player *, CardZone *, int, QString, Player *, bool)), this, SLOT(logRevealCards(Player *, CardZone *, int, QString, Player *, bool)));
     connect(player, SIGNAL(logAlwaysRevealTopCard(Player *, CardZone *, bool)), this, SLOT(logAlwaysRevealTopCard(Player *, CardZone *, bool)));
+	connect(player, SIGNAL(logMomir(Player *, int)), this, SLOT(logMomir(Player *, int)));
 }
 
 MessageLogWidget::MessageLogWidget(const TabSupervisor *_tabSupervisor, TabGame *_game, QWidget *parent)

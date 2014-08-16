@@ -118,6 +118,7 @@ private:
     QMap<int, QPixmap *> scaledPixmapCache;
 	CardInfo *doubleFaced;
 	int cmc;
+	bool hasCmc;
 public:
     CardInfo(CardDatabase *_db,
         const QString &_name = QString(),
@@ -169,11 +170,13 @@ public:
     void imageLoaded(const QImage &image);
     CardSet *getPreferredSet();
     int getPreferredMuId();
-	void setDoubleFaced(CardInfo* partner) { doubleFaced = partner; qDebug() << "Set " + partner->getName() + "as backside of " + name; }
+	void setDoubleFaced(CardInfo* partner) { doubleFaced = partner; }
 	CardInfo* getDoubleFaced() { return doubleFaced; }
 	bool isDoubleFaced() { return doubleFaced != NULL; }
-	void setCmc(const int &_cmc) { cmc = _cmc };
+	void setCmc(const int &_cmc) { cmc = _cmc; }
 	int getCmc() const { return cmc; }
+	void setHasCmc(bool _hasCmc) { hasCmc = _hasCmc; }
+	bool getHasCmc() { return hasCmc; }
 
     /**
      * Simplify a name to have no punctuation and lowercase all letters, for
@@ -251,6 +254,7 @@ public:
     void cacheCardPixmaps(const QStringList &cardNames);
     void loadImage(CardInfo *card);
 	bool getIsJson() const { return isJson; }
+	CardInfo* getMomir(int cmc);
 public slots:
     void clearPixmapCache();
     LoadStatus loadCardDatabase(const QString &path, bool tokens = false);

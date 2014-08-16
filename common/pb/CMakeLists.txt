@@ -48,6 +48,7 @@ SET(PROTO_FILES
     command_set_sideboard_plan.proto
     command_set_sideboard_lock.proto
     command_shuffle.proto
+    command_momir.proto
     commands.proto
     command_stop_dump_zone.proto
     command_undo_draw.proto
@@ -106,6 +107,7 @@ SET(PROTO_FILES
     event_user_joined.proto
     event_user_left.proto
     event_user_message.proto
+    event_momir.proto
     game_commands.proto
     game_event_container.proto
     game_event_context.proto
