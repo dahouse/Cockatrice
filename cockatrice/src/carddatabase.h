@@ -210,8 +210,12 @@ protected:
     LoadStatus loadStatus;
 private:
     static const int versionNeeded;
+	bool isJson;
     void loadCardsFromXml(QXmlStreamReader &xml);
     void loadSetsFromXml(QXmlStreamReader &xml);
+
+	void loadCardsFromJson(QJsonObject &jsonSet);
+	void loadSetsFromJson(QJsonObject &json);
 
     CardInfo *getCardFromMap(CardNameMap &cardMap, const QString &cardName, bool createIfNotFound);
 public:
@@ -239,6 +243,7 @@ public:
     bool getLoadSuccess() const { return loadStatus == Ok; }
     void cacheCardPixmaps(const QStringList &cardNames);
     void loadImage(CardInfo *card);
+	bool getIsJson() const { return isJson; }
 public slots:
     void clearPixmapCache();
     LoadStatus loadCardDatabase(const QString &path, bool tokens = false);
