@@ -116,6 +116,8 @@ private:
     int tableRow;
     QPixmap *pixmap;
     QMap<int, QPixmap *> scaledPixmapCache;
+	CardInfo *doubleFaced;
+	int cmc;
 public:
     CardInfo(CardDatabase *_db,
         const QString &_name = QString(),
@@ -167,6 +169,11 @@ public:
     void imageLoaded(const QImage &image);
     CardSet *getPreferredSet();
     int getPreferredMuId();
+	void setDoubleFaced(CardInfo* partner) { doubleFaced = partner; qDebug() << "Set " + partner->getName() + "as backside of " + name; }
+	CardInfo* getDoubleFaced() { return doubleFaced; }
+	bool isDoubleFaced() { return doubleFaced != NULL; }
+	void setCmc(const int &_cmc) { cmc = _cmc };
+	int getCmc() const { return cmc; }
 
     /**
      * Simplify a name to have no punctuation and lowercase all letters, for

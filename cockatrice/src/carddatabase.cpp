@@ -364,7 +364,8 @@ CardInfo::CardInfo(CardDatabase *_db,
       muIds(_muIds),
       cipt(_cipt),
       tableRow(_tableRow),
-      pixmap(NULL)
+      pixmap(NULL),
+	  doubleFaced(NULL)
 {
     for (int i = 0; i < sets.size(); i++)
         sets[i]->append(this);
@@ -588,7 +589,7 @@ CardDatabase::CardDatabase(QObject *parent)
     connect(settingsCache, SIGNAL(picDownloadHqChanged()), this, SLOT(picDownloadHqChanged()));
 
     loadCardDatabase();
-    loadTokenDatabase();
+    //loadTokenDatabase();
 
     pictureLoaderThread = new QThread;
     pictureLoader = new PictureLoader(settingsCache->getPicsPath(), settingsCache->getPicDownload(), settingsCache->getPicDownloadHq());
@@ -785,6 +786,7 @@ void CardDatabase::loadCardsFromJson(QJsonObject &jsonSet)
 		QString setName = jsonSet.value("code").toString();
 		QJsonArray jsonCards = jsonSet.value("cards").toArray();
 		QString url("http://mtgimage.com/set/");
+		QMap<QString, CardInfo*> dfCards;
 		QJsonArray::const_iterator i;
 		for (i = jsonCards.constBegin(); i != jsonCards.constEnd(); ++i) {
 			QJsonObject jsonCard = (*i).toObject();
@@ -828,10 +830,12 @@ void CardDatabase::loadCardsFromJson(QJsonObject &jsonSet)
 				SetList sets;
 				int tableRow = 0;
 				int loyalty = 0;
+				int cmc = 0;
 				bool cipt = false;
 				bool isToken = false;
 
 				manacost = jsonCard.value("manaCost").toString();
+				cmc = jsonCard.value("cmc").toInt();
 				type = jsonCard.value("type").toString();
 				if (jsonCard.contains("power") || jsonCard.contains("toughness"))
 					pt = jsonCard.value("power").toString() + "/" + jsonCard.value("toughness").toString();
@@ -868,7 +872,21 @@ void CardDatabase::loadCardsFromJson(QJsonObject &jsonSet)
 				cipt = text.contains(name + " enters the battlefield tapped.");
 				isToken = jsonCard.value("type").toString() == "token";
 
-				addCard(new CardInfo(this, name, isToken, manacost, type, pt, text, colors, loyalty, cipt, tableRow, sets, customPicURLs, customPicURLsHq, muids));
+				CardInfo* card = new CardInfo(this, name, isToken, manacost, type, pt, text, colors, loyalty, cipt, tableRow, sets, customPicURLs, customPicURLsHq, muids);
+				addCard(card);
+
+				if (layout == "double-faced") {
+					QJsonArray names = jsonCard.value("names").toArray();
+					QString partnerName = names[0].toString() == name ? names[1].toString() : names[0].toString();
+					if (dfCards.contains(partnerName)) {
+						CardInfo* partner = dfCards.value(partnerName);
+						card->setDoubleFaced(partner);
+						partner->setDoubleFaced(card);
+						dfCards.remove(partnerName);
+						//qDebug() << "Cards " + name + " and " + partnerName + " from set " + setName + " established as double-faced partners.";
+					}
+					else dfCards.insert(name, card);
+				}
 			}
 		}
 	}

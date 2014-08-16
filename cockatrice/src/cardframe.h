@@ -27,6 +27,7 @@ public slots:
     void setCard(const QString &cardName);
     void setCard(AbstractCardItem *card);
     void clear();
+	void switchCard();
 
 private slots:
     void hasPictureChanged();

@@ -16,6 +16,7 @@
 #include <QApplication>
 #include <QClipboard>
 #include <QTextStream>
+#include <QPushButton>
 #include "tab_deck_editor.h"
 #include "window_sets.h"
 #include "carddatabase.h"
@@ -104,6 +105,9 @@ TabDeckEditor::TabDeckEditor(TabSupervisor *_tabSupervisor, QWidget *parent)
     aCardTextOnly->setCheckable(true);
     connect(aCardTextOnly, SIGNAL(triggered()), cardInfo, SLOT(toggleCardTextOnly()));
 
+	QPushButton* switchButton = new QPushButton("<->", this);
+	connect(switchButton, SIGNAL(clicked()), cardInfo, SLOT(switchCard()));
+
     filterModel = new FilterTreeModel();
     databaseDisplayModel->setFilterTree(filterModel->filterTree());
     filterView = new QTreeView;
@@ -124,6 +128,7 @@ TabDeckEditor::TabDeckEditor(TabSupervisor *_tabSupervisor, QWidget *parent)
     filter->addWidget(filterView, 10);
 
     QVBoxLayout *middleFrame = new QVBoxLayout;
+	middleFrame->addWidget(switchButton);
     middleFrame->addWidget(cardInfo, 0, Qt::AlignTop);
     middleFrame->addLayout(filter, 10);
 

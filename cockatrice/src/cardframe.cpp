@@ -57,3 +57,8 @@ void CardFrame::hasPictureChanged()
     else
         setCurrentWidget(text);
 }
+
+void CardFrame::switchCard()
+{
+	if (info->isDoubleFaced()) setCard(info->getDoubleFaced());
+}
