@@ -16,10 +16,12 @@
 #include "gamescene.h"
 #include "settingscache.h"
 #include "dlg_create_token.h"
+#include "dlg_create_random.h"
 #include "carddatabase.h"
 #include "color.h"
 #include "deck_loader.h"
 #include "main.h"
+#include "rng_sfmt.h"
 #include <QSettings>
 #include <QPainter>
 #include <QMenu>
@@ -39,7 +41,7 @@
 #include "pb/command_create_token.pb.h"
 #include "pb/command_flip_card.pb.h"
 #include "pb/command_game_say.pb.h"
-#include "pb/command_momir.pb.h"
+#include "pb/command_create_random.pb.h"
 #include "pb/serverinfo_user.pb.h"
 #include "pb/serverinfo_player.pb.h"
 #include "pb/serverinfo_zone.pb.h"
@@ -65,7 +67,7 @@
 #include "pb/event_draw_cards.pb.h"
 #include "pb/event_reveal_cards.pb.h"
 #include "pb/event_change_zone_properties.pb.h"
-#include "pb/event_momir.pb.h"
+#include "pb/event_create_random.pb.h"
 
 PlayerArea::PlayerArea(QGraphicsItem *parentItem)
     : QObject(), QGraphicsItem(parentItem)
@@ -113,7 +115,6 @@ Player::Player(const ServerInfo_User &info, int _id, bool _local, TabGame *_pare
       dialogSemaphore(false),
       deck(0)
 {
-	signalMapper = new QSignalMapper(this);
 
     userInfo = new ServerInfo_User;
     userInfo->CopyFrom(info);
@@ -314,14 +315,15 @@ Player::Player(const ServerInfo_User &info, int _id, bool _local, TabGame *_pare
     
         aCreateToken = new QAction(this);
         connect(aCreateToken, SIGNAL(triggered()), this, SLOT(actCreateToken()));
+
+		aCreateRandom = new QAction(this);
+		connect(aCreateRandom, SIGNAL(triggered()), this, SLOT(actCreateRandom()));
         
         aCreateAnotherToken = new QAction(this);
         connect(aCreateAnotherToken, SIGNAL(triggered()), this, SLOT(actCreateAnotherToken()));
         aCreateAnotherToken->setEnabled(false);
         
         createPredefinedTokenMenu = new QMenu(QString());
-
-		QStringList momircmc = QStringList({ "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "15", "16" });
 
         playerMenu->addSeparator();
         countersMenu = playerMenu->addMenu(QString());
@@ -332,21 +334,9 @@ Player::Player(const ServerInfo_User &info, int _id, bool _local, TabGame *_pare
         playerMenu->addSeparator();
         playerMenu->addAction(aCreateToken);
         playerMenu->addAction(aCreateAnotherToken);
+		playerMenu->addAction(aCreateRandom);
         playerMenu->addMenu(createPredefinedTokenMenu);
         playerMenu->addSeparator();
-
-		momirMenu = playerMenu->addMenu(tr("Momir"));
-		for (int i = 0; i < momircmc.size(); i++) {
-			QAction *cmc = new QAction(this);
-			cmc->setText(momircmc.value(i));
-			momirMenu->addAction(cmc);
-			connect(cmc, SIGNAL(triggered()), signalMapper, SLOT(map()));
-			signalMapper->setMapping(cmc, momircmc.value(i).toInt());
-		}
-
-		connect(signalMapper, SIGNAL(mapped(const int &)), this, SLOT(actMomir(const int &)));
-
-		playerMenu->addSeparator();
         sayMenu = playerMenu->addMenu(QString());
         initSayMenu();
         
@@ -641,6 +631,7 @@ void Player::retranslateUi()
         aRollDie->setText(tr("R&oll die..."));
         aCreateToken->setText(tr("&Create token..."));
         aCreateAnotherToken->setText(tr("C&reate another token"));
+		aCreateRandom->setText(tr("Create random token"));
         createPredefinedTokenMenu->setTitle(tr("Cr&eate predefined token"));
         sayMenu->setTitle(tr("S&ay"));
         
@@ -991,28 +982,40 @@ void Player::actCreateToken()
     actCreateAnotherToken();
 }
 
-void Player::actMomir(const int &cmc)
+void Player::actCreateRandom()
 {
-	qDebug() << "Trying to Momir.";
-	CardInfo* card = db->getMomir(cmc);
-	if (card == NULL) return;
-	if (CardInfo* correctedCard = db->getCardBySimpleName(card->getName(), false))
-		card = correctedCard;
-	lastTokenName = card->getName();
-	if (card->getColors().size() == 0) lastTokenColor = QString();
-	else if (card->getColors().size() > 1) lastTokenColor = "m";
-	else if (card->getColors().size() == 1) {
-		lastTokenColor = card->getColors().value(0);
-		lastTokenColor = lastTokenColor.left(1).toLower();
-	}
-	lastTokenPT = card->getPowTough();
-	lastTokenDestroy = true;
-	aCreateAnotherToken->setEnabled(true);
+	DlgCreateRandom dlg = DlgCreateRandom();
+	if (!dlg.exec())
+		return;
 
-	Command_Momir cmd;
-	cmd.set_cmc(cmc);
+	randomCardPool = dlg.getCardPool();
+	if (randomCardPool.size() == 0)
+		return;
+
+	Command_CreateRandom cmd;
+	cmd.set_cmc(dlg.getCmc());
+	cmd.set_comparator(dlg.getComparator());
+	cmd.set_type(dlg.getType().toStdString());
+	cmd.set_amount(dlg.getAmount());
 	sendGameCommand(cmd);
-	actCreateAnotherToken();
+
+	for (int i = 0; i < dlg.getAmount(); i++) {
+		int rndIndex = rng->rand(0, randomCardPool.size() - 1);
+
+		CardInfo* card = randomCardPool.value(rndIndex);
+		if (CardInfo* correctedCard = db->getCardBySimpleName(card->getName(), false))
+			card = correctedCard;
+		lastTokenName = card->getName();
+		QStringList colors = card->getColors();
+		if (colors.size() == 0) lastTokenColor = QString();
+		if (colors.size() > 1) lastTokenColor = "m";
+		if (colors.size() == 1) lastTokenColor = colors.value(0).left(1).toLower();
+		lastTokenPT = card->getPowTough();
+		lastTokenDestroy = dlg.getDestroy();
+		aCreateAnotherToken->setEnabled(true);
+
+		actCreateAnotherToken();
+	}
 }
 
 void Player::actCreateAnotherToken()
@@ -1145,9 +1148,9 @@ void Player::eventCreateToken(const Event_CreateToken &event)
 
 }
 
-void Player::eventMomir(const Event_Momir &event)
+void Player::eventCreateRandom(const Event_CreateRandom &event)
 {
-	emit logMomir(this, event.cmc());
+	emit logCreateRandom(this, event.cmc(), event.comparator(), QString::fromStdString(event.type()), event.amount());
 }
 
 void Player::eventSetCardAttr(const Event_SetCardAttr &event, const GameEventContext &context)
@@ -1494,7 +1497,7 @@ void Player::processGameEvent(GameEvent::GameEventType type, const GameEvent &ev
         case GameEvent::DRAW_CARDS: eventDrawCards(event.GetExtension(Event_DrawCards::ext)); break;
         case GameEvent::REVEAL_CARDS: eventRevealCards(event.GetExtension(Event_RevealCards::ext)); break;
         case GameEvent::CHANGE_ZONE_PROPERTIES: eventChangeZoneProperties(event.GetExtension(Event_ChangeZoneProperties::ext)); break;
-		case GameEvent::MOMIR: eventMomir(event.GetExtension(Event_Momir::ext)); break;
+		case GameEvent::CREATE_RANDOM: eventCreateRandom(event.GetExtension(Event_CreateRandom::ext)); break;
         default: {
             qDebug() << "unhandled game event";
         }

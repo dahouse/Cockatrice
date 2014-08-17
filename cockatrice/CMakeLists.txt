@@ -91,6 +91,7 @@ SET(cockatrice_SOURCES
     src/soundengine.cpp
     src/pending_command.cpp
     src/debugwidget.cpp
+    src/dlg_create_random.cpp
     ${VERSION_STRING_CPP}
 )
 

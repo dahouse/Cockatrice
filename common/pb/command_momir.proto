@@ -1,9 +1,0 @@
-import "game_commands.proto";
-message Command_Momir {
-	extend GameCommand {
-		optional Command_Momir ext = 1032;
-	}
-	optional uint32 cmc = 1;
-}
-
-

@@ -1,0 +1,12 @@
+import "game_commands.proto";
+message Command_CreateRandom {
+	extend GameCommand {
+		optional Command_CreateRandom ext = 1032;
+	}
+	optional uint32 cmc = 1;
+	optional uint32 comparator = 2;
+	optional string type = 3;
+	optional uint32 amount = 4;
+}
+
+

@@ -1,6 +1,5 @@
 #include "carddatabase.h"
 #include "settingscache.h"
-#include "rng_abstract.h"
 #include <QDir>
 #include <QDirIterator>
 #include <QFile>
@@ -882,6 +881,38 @@ void CardDatabase::loadCardsFromJson(QJsonObject &jsonSet)
 					card->setCmc(cmc);
 					card->setHasCmc(true);
 				}
+
+				if (jsonCard.contains("supertypes")) {
+					QJsonArray jsonSupertypes = jsonCard.value("supertypes").toArray();
+					for (int i = 0; i < jsonSupertypes.size(); i++)
+					{
+						QString supertype = jsonSupertypes[i].toString();
+						if (!card->hasSupertype(supertype)) card->addSupertype(supertype);
+						if (!supertypes.contains(supertype)) supertypes << supertype;
+					}
+						
+				}
+				if (jsonCard.contains("types")) {
+					QJsonArray jsonTypes = jsonCard.value("types").toArray();
+					for (int i = 0; i < jsonTypes.size(); i++)
+					{
+						QString type = jsonTypes[i].toString();
+						if (!card->hasType(type)) card->addType(type);
+						if (!types.contains(type)) types << type;
+					}
+
+				}
+				if (jsonCard.contains("subtypes")) {
+					QJsonArray jsonSubtypes = jsonCard.value("subtypes").toArray();
+					for (int i = 0; i < jsonSubtypes.size(); i++)
+					{
+						QString subtype = jsonSubtypes[i].toString();
+						if (!card->hasSubtype(subtype)) card->addSubtype(subtype);
+						if (!subtypes.contains(subtype)) subtypes << subtype;
+					}
+
+				}
+
 				addCard(card);
 
 				if (layout == "double-faced") {
@@ -1105,21 +1136,37 @@ void CardDatabase::picsPathChanged()
     clearPixmapCache();
 }
 
-CardInfo* CardDatabase::getMomir(int cmc)
+QList<CardInfo *> CardDatabase::getCards(int cmc, int comparator, QString type)
 {
-	qDebug() << "Attempting to Momir for " + QString::number(cmc) + " mana.";
 	QList<CardInfo*> cardList;
 	CardNameMap::iterator i;
 	for (i = cards.begin(); i != cards.end(); ++i) {
+		bool fits = false;
 		CardInfo* card = i.value();
-		if (card->getCardType().contains("Creature") && card->getCmc() == cmc && card->getHasCmc())
-			cardList << card;
+		if (cmc >= 0 && card->getHasCmc() && card->getCardType().contains(type, Qt::CaseInsensitive))
+		{
+			int cardCmc = card->getCmc();
+			switch (comparator)
+			{
+			case 0:
+				if (cardCmc == cmc) fits = true;
+				break;
+			case 1:
+				if (cardCmc > cmc) fits = true;
+				break;
+			case 2:
+				if (cardCmc < cmc) fits = true;
+				break;
+			case 3:
+				if (cardCmc >= cmc) fits = true;
+				break;
+			case 4:
+				if (cardCmc <= cmc) fits = true;
+				break;
+			}
+		}
+		else if (cmc == -1 && comparator == -1 && card->getCardType().contains(type, Qt::CaseInsensitive)) fits = true;
+		if (fits) cardList << card;
 	}
-	if (cardList.size() > 0) {
-		qDebug() << "Found " + QString::number(cardList.size()) + " valid cards.";
-		int rndIndex = rng->rand(0, cardList.size() - 1);
-		qDebug() << "Returning " + cardList[rndIndex]->getName();
-		return cardList[rndIndex];
-	}
-	else return NULL;
+	return cardList;
 }

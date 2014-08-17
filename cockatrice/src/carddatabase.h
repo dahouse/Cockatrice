@@ -119,6 +119,7 @@ private:
 	CardInfo *doubleFaced;
 	int cmc;
 	bool hasCmc;
+	QStringList supertypes, types, subtypes;
 public:
     CardInfo(CardDatabase *_db,
         const QString &_name = QString(),
@@ -177,6 +178,15 @@ public:
 	int getCmc() const { return cmc; }
 	void setHasCmc(bool _hasCmc) { hasCmc = _hasCmc; }
 	bool getHasCmc() { return hasCmc; }
+	bool hasSupertype(const QString &_type) { return supertypes.contains(_type); }
+	bool hasType(const QString &_type) { return types.contains(_type); }
+	bool hasSubtype(const QString &_type) { return subtypes.contains(_type); }
+	QStringList getSupertypes() { return supertypes; }
+	QStringList getTypes() { return supertypes; }
+	QStringList getSubtypes() { return supertypes; }
+	void addSupertype(const QString &_type) { supertypes << _type; }
+	void addType(const QString &_type) { types << _type; }
+	void addSubtype(const QString &_type) { subtypes << _type; }
 
     /**
      * Simplify a name to have no punctuation and lowercase all letters, for
@@ -218,6 +228,8 @@ protected:
     QThread *pictureLoaderThread;
     PictureLoader *pictureLoader;
     LoadStatus loadStatus;
+	
+	QStringList supertypes, types, subtypes;
 private:
     static const int versionNeeded;
 	bool isJson;
@@ -255,6 +267,10 @@ public:
     void loadImage(CardInfo *card);
 	bool getIsJson() const { return isJson; }
 	CardInfo* getMomir(int cmc);
+	QList<CardInfo *> getCards(int cmc, int comparator, QString type);
+	QStringList getSupertypes() { return supertypes; }
+	QStringList getTypes() { return types; }
+	QStringList getSubtypes() { return subtypes; }
 public slots:
     void clearPixmapCache();
     LoadStatus loadCardDatabase(const QString &path, bool tokens = false);

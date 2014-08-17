@@ -407,12 +407,42 @@ void MessageLogWidget::logCreateToken(Player *player, QString cardName, QString 
         appendHtml(tr("%1 creates token: %2%3.", "male").arg(sanitizeHtml(player->getName())).arg(cardLink(cardName)).arg(pt.isEmpty() ? QString() : QString(" (%1)").arg(sanitizeHtml(pt))));
 }
 
-void MessageLogWidget::logMomir(Player *player, int cmc)
+void MessageLogWidget::logCreateRandom(Player *player, int cmc, int comparator, QString type, int amount)
 {
-	if (isFemale(player))
-		appendHtml(tr("%1 activates Momir with %2 mana.", "female").arg(sanitizeHtml(player->getName())).arg(sanitizeHtml(QString::number(cmc))));
-	else
-		appendHtml(tr("%1 activates Momir with %2 mana.", "male").arg(sanitizeHtml(player->getName())).arg(sanitizeHtml(QString::number(cmc))));
+	if (cmc >= 0) {
+		QString compStr;
+		QString logStr;
+		switch (comparator)
+		{
+		case 0:
+			compStr = "";
+			break;
+		case 1:
+			compStr = tr("more than ");
+			break;
+		case 2:
+			compStr = tr("less than ");
+			break;
+		case 3:
+			compStr = tr(" or more");
+			break;
+		case 4:
+			compStr = tr(" or less");
+			break;
+		}
+
+		if (isFemale(player))
+			appendHtml(tr("%1 tries to create %2x random %3 with %4%5 converted mana.", "female").arg(sanitizeHtml(player->getName())).arg(sanitizeHtml(QString::number(amount))).arg(sanitizeHtml(type)).arg(sanitizeHtml(comparator < 3 ? compStr : QString::number(cmc))).arg(sanitizeHtml(comparator < 3 ? QString::number(cmc) : compStr)));
+		else
+			appendHtml(tr("%1 tries to create %2x random %3 with %4%5 converted mana.", "male").arg(sanitizeHtml(player->getName())).arg(sanitizeHtml(QString::number(amount))).arg(sanitizeHtml(type)).arg(sanitizeHtml(comparator < 3 ? compStr : QString::number(cmc))).arg(sanitizeHtml(comparator < 3 ? QString::number(cmc) : compStr)));
+	}
+	else {
+		if (isFemale(player))
+			appendHtml(tr("%1 tries to create %2x random %3","female").arg(sanitizeHtml(player->getName())).arg(sanitizeHtml(QString::number(amount))).arg(sanitizeHtml(type)));
+		else
+			appendHtml(tr("%1 tries to create %2x random %3", "male").arg(sanitizeHtml(player->getName())).arg(sanitizeHtml(QString::number(amount))).arg(sanitizeHtml(type)));
+	}
+	
 }
 
 void MessageLogWidget::logCreateArrow(Player *player, Player *startPlayer, QString startCard, Player *targetPlayer, QString targetCard, bool playerTarget)
@@ -881,7 +911,7 @@ void MessageLogWidget::connectToPlayer(Player *player)
     connect(player, SIGNAL(logUndoDraw(Player *, QString)), this, SLOT(logUndoDraw(Player *, QString)));
     connect(player, SIGNAL(logRevealCards(Player *, CardZone *, int, QString, Player *, bool)), this, SLOT(logRevealCards(Player *, CardZone *, int, QString, Player *, bool)));
     connect(player, SIGNAL(logAlwaysRevealTopCard(Player *, CardZone *, bool)), this, SLOT(logAlwaysRevealTopCard(Player *, CardZone *, bool)));
-	connect(player, SIGNAL(logMomir(Player *, int)), this, SLOT(logMomir(Player *, int)));
+	connect(player, SIGNAL(logCreateRandom(Player *, int, int, QString, int)), this, SLOT(logCreateRandom(Player *, int, int, QString, int)));
 }
 
 MessageLogWidget::MessageLogWidget(const TabSupervisor *_tabSupervisor, TabGame *_game, QWidget *parent)
