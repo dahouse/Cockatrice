@@ -51,7 +51,7 @@ void CardSet::setSortKey(unsigned int _sortKey)
 {
     sortKey = _sortKey;
 
-    QSettings settings;
+	QSettings settings("sets.ini", QSettings::IniFormat);
     settings.beginGroup("sets");
     settings.beginGroup(shortName);
     settings.setValue("sortkey", sortKey);
@@ -59,7 +59,7 @@ void CardSet::setSortKey(unsigned int _sortKey)
 
 void CardSet::updateSortKey()
 {
-    QSettings settings;
+	QSettings settings("sets.ini", QSettings::IniFormat);
     settings.beginGroup("sets");
     settings.beginGroup(shortName);
     sortKey = settings.value("sortkey", 0).toInt();
@@ -367,7 +367,8 @@ CardInfo::CardInfo(CardDatabase *_db,
       pixmap(NULL),
 	  doubleFaced(NULL),
 	  cmc(0),
-	  hasCmc(false)
+	  hasCmc(false),
+	  isCustom(false)
 {
     for (int i = 0; i < sets.size(); i++)
         sets[i]->append(this);
@@ -582,16 +583,16 @@ static QXmlStreamWriter &operator<<(QXmlStreamWriter &xml, const CardInfo *info)
 }
 
 CardDatabase::CardDatabase(QObject *parent)
-	: QObject(parent), noCard(0), loadStatus(NotLoaded), isJson(false)
+	: QObject(parent), noCard(0), loadStatus(NotLoaded)
 {
     connect(settingsCache, SIGNAL(picsPathChanged()), this, SLOT(picsPathChanged()));
     connect(settingsCache, SIGNAL(cardDatabasePathChanged()), this, SLOT(loadCardDatabase()));
-    connect(settingsCache, SIGNAL(tokenDatabasePathChanged()), this, SLOT(loadTokenDatabase()));
+    //connect(settingsCache, SIGNAL(customDatabasePathChanged()), this, SLOT(loadCustomDatabase()));
     connect(settingsCache, SIGNAL(picDownloadChanged()), this, SLOT(picDownloadChanged()));
     connect(settingsCache, SIGNAL(picDownloadHqChanged()), this, SLOT(picDownloadHqChanged()));
 
     loadCardDatabase();
-    //loadTokenDatabase();
+    //loadCustomDatabase();
 
     pictureLoaderThread = new QThread;
     pictureLoader = new PictureLoader(settingsCache->getPicsPath(), settingsCache->getPicDownload(), settingsCache->getPicDownloadHq());
@@ -770,19 +771,19 @@ void CardDatabase::loadCardsFromXml(QXmlStreamReader &xml)
     }
 }
 
-void CardDatabase::loadSetsFromJson(QJsonObject &json)
+void CardDatabase::loadSetsFromJson(QJsonObject &json, const bool &custom)
 {
 	if (json.keys().size() > 0) {
 		QJsonObject::const_iterator i;
 		for (i = json.constBegin(); i != json.constEnd(); ++i) {
 			QJsonObject jsonSet = (*i).toObject();
 			sets.insert(jsonSet.value("code").toString(), new CardSet(jsonSet.value("code").toString(), jsonSet.value("name").toString()));
-			loadCardsFromJson(jsonSet);
+			loadCardsFromJson(jsonSet, custom);
 		}
 	}
 }
 
-void CardDatabase::loadCardsFromJson(QJsonObject &jsonSet)
+void CardDatabase::loadCardsFromJson(QJsonObject &jsonSet, const bool &custom)
 {
 	if (jsonSet.contains("cards")) {
 		QString setName = jsonSet.value("code").toString();
@@ -802,7 +803,7 @@ void CardDatabase::loadCardsFromJson(QJsonObject &jsonSet)
 				}
 			}
 			
-			if (cards.contains(name)) {
+			if (cards.contains(name) && !custom) {
 				CardInfo *card = cards.value(name);
 				if (!card->getSets().contains(sets.value(setName))) {
 					card->addToSet(sets.value(setName));
@@ -913,6 +914,8 @@ void CardDatabase::loadCardsFromJson(QJsonObject &jsonSet)
 
 				}
 
+				if (custom) card->setIsCustom(true);
+
 				addCard(card);
 
 				if (layout == "double-faced") {
@@ -946,51 +949,22 @@ CardInfo *CardDatabase::getCardFromMap(CardNameMap &cardMap, const QString &card
         return 0;
 }
 
-LoadStatus CardDatabase::loadFromFile(const QString &fileName)
+LoadStatus CardDatabase::loadFromFile(const QString &fileName, const bool &custom)
 {
     QFile file(fileName);
     file.open(QIODevice::ReadOnly);
     if (!file.isOpen())
         return FileError;
 
-	if (fileName.endsWith(".json")) {
-		qDebug() << "Trying to load data from json file " + fileName;
-		QJsonParseError jsonErr;
-		QJsonDocument jsonDoc(QJsonDocument::fromJson(file.readAll(), &jsonErr));
-		if (jsonErr.error != QJsonParseError::NoError) {
-			qDebug() << jsonErr.errorString();
-			return Invalid;
-		}
-		QJsonObject jsonDB = jsonDoc.object();
-		loadSetsFromJson(jsonDB);
-		isJson = true;
+	qDebug() << "Trying to load data from json file " + fileName;
+	QJsonParseError jsonErr;
+	QJsonDocument jsonDoc(QJsonDocument::fromJson(file.readAll(), &jsonErr));
+	if (jsonErr.error != QJsonParseError::NoError) {
+		qDebug() << jsonErr.errorString();
+		return Invalid;
 	}
-	else {
-		QXmlStreamReader xml(&file);
-		while (!xml.atEnd()) {
-			if (xml.readNext() == QXmlStreamReader::StartElement) {
-				if (xml.name() != "cockatrice_carddatabase")
-					return Invalid;
-				int version = xml.attributes().value("version").toString().toInt();
-				if (version < versionNeeded) {
-					qDebug() << "loadFromFile(): Version too old: " << version;
-					return VersionTooOld;
-				}
-				if (isJson) {
-					qWarning() << "Loading " + fileName + " even though one ore more json files have already been loaded. Existing card data will be overwritten.";
-					isJson = false; // Database not reliably filled with json data anymore, disable json dependent features
-				}
-				while (!xml.atEnd()) {
-					if (xml.readNext() == QXmlStreamReader::EndElement)
-						break;
-					if (xml.name() == "sets")
-						loadSetsFromXml(xml);
-					else if (xml.name() == "cards")
-						loadCardsFromXml(xml);
-				}
-			}
-		}
-	}
+	QJsonObject jsonDB = jsonDoc.object();
+	loadSetsFromJson(jsonDB, custom);
 
     qDebug() << cards.size() << "cards in" << sets.size() << "sets loaded";
 
@@ -1085,9 +1059,9 @@ void CardDatabase::loadCardDatabase()
     loadCardDatabase(settingsCache->getCardDatabasePath(), false);
 }
 
-void CardDatabase::loadTokenDatabase()
+void CardDatabase::loadCustomDatabase()
 {
-    loadCardDatabase(settingsCache->getTokenDatabasePath(), true);
+    loadCardDatabase(settingsCache->getCustomDatabasePath(), true);
 }
 
 QStringList CardDatabase::getAllColors() const
@@ -1167,6 +1141,17 @@ QList<CardInfo *> CardDatabase::getCards(int cmc, int comparator, QString type)
 		}
 		else if (cmc == -1 && comparator == -1 && card->getCardType().contains(type, Qt::CaseInsensitive)) fits = true;
 		if (fits) cardList << card;
+	}
+	return cardList;
+}
+
+QList<CardInfo *> CardDatabase::getCustomCards()
+{
+	QList<CardInfo*> cardList;
+	CardNameMap::const_iterator i;
+	for (i = cards.constBegin(); i != cards.constEnd(); ++i) {
+		CardInfo* card = i.value();
+		if (card->getIsCustom()) cardList << card;
 	}
 	return cardList;
 }

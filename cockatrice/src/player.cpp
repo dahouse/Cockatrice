@@ -368,6 +368,9 @@ Player::Player(const ServerInfo_User &info, int _id, bool _local, TabGame *_pare
     aDoesntUntap = new QAction(this);
     aDoesntUntap->setData(cmDoesntUntap);
     connect(aDoesntUntap, SIGNAL(triggered()), this, SLOT(cardMenuAction()));
+	aDelay = new QAction(this);
+	aDelay->setData(cmDelay);
+	connect(aDelay, SIGNAL(triggered()), this, SLOT(cardMenuAction()));
     aAttach = new QAction(this);
     connect(aAttach, SIGNAL(triggered()), this, SLOT(actAttach()));
     aUnattach = new QAction(this);
@@ -651,6 +654,7 @@ void Player::retranslateUi()
     aTap->setText(tr("&Tap"));
     aUntap->setText(tr("&Untap"));
     aDoesntUntap->setText(tr("Toggle &normal untapping"));
+	aDelay->setText(tr("Delay"));
     aFlip->setText(tr("&Flip"));
     aPeek->setText(tr("&Peek at card face"));
     aClone->setText(tr("&Clone"));
@@ -745,7 +749,7 @@ void Player::initSayMenu()
 {
     sayMenu->clear();
 
-    QSettings settings;
+	QSettings settings("messages.ini", QSettings::IniFormat);
     settings.beginGroup("messages");
     int count = settings.value("count", 0).toInt();
     for (int i = 0; i < count; i++) {
@@ -1088,6 +1092,12 @@ void Player::setCardAttrHelper(const GameEventContext &context, CardItem *card, 
             card->setPT(avalue);
             break;
         }
+		case AttrDelay: {
+			bool value = (avalue == "1");
+			emit logSetDelay(this, card, value);
+			card->setDelay(value);
+			break;
+		}
     }
 }
 
@@ -1808,7 +1818,7 @@ void Player::cardMenuAction()
         cardList.append(qgraphicsitem_cast<CardItem *>(sel.takeFirst()));
     
     QList< const ::google::protobuf::Message * > commandList;
-    if (a->data().toInt() <= (int) cmClone)
+	if (a->data().toInt() <= (int)cmClone || a->data().toInt() >= (int)cmDelay)
         for (int i = 0; i < cardList.size(); ++i) {
             CardItem *card = cardList[i];
             switch (static_cast<CardMenuActionType>(a->data().toInt())) {
@@ -1870,6 +1880,15 @@ void Player::cardMenuAction()
                     commandList.append(cmd);
                     break;
                 }
+				case cmDelay: {
+					Command_SetCardAttr *cmd = new Command_SetCardAttr;
+					cmd->set_zone(card->getZone()->getName().toStdString());
+					cmd->set_card_id(card->getId());
+					cmd->set_attribute(AttrDelay);
+					cmd->set_attr_value(card->getDelay() ? "0" : "1");
+					commandList.append(cmd);
+					break;
+				}
                 default: break;
             }
         }
@@ -2197,6 +2216,7 @@ void Player::updateCardMenu(CardItem *card)
                 cardMenu->addAction(aTap);
                 cardMenu->addAction(aUntap);
                 cardMenu->addAction(aDoesntUntap);
+				cardMenu->addAction(aDelay);
                 cardMenu->addAction(aFlip);
                 if (card->getFaceDown())
                     cardMenu->addAction(aPeek);

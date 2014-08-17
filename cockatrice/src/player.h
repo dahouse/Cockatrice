@@ -4,7 +4,6 @@
 #include <QInputDialog>
 #include <QPoint>
 #include <QMap>
-#include <QSignalMapper>
 #include "abstractgraphicsitem.h"
 #include "pb/game_event.pb.h"
 #include "pb/card_attributes.pb.h"
@@ -108,6 +107,7 @@ signals:
     void logRevealCards(Player *player, CardZone *zone, int cardId, QString cardName, Player *otherPlayer, bool faceDown);
     void logAlwaysRevealTopCard(Player *player, CardZone *zone, bool reveal);
 	void logCreateRandom(Player *player, int cmc, int comparator, QString type, int amount);
+	void logSetDelay(Player *player, CardItem *card, bool delay);
     
     void sizeChanged();
     void gameConceded();
@@ -180,7 +180,7 @@ private:
     QAction *aPlay,
         *aHide,
         *aTap, *aUntap, *aDoesntUntap, *aAttach, *aUnattach, *aDrawArrow, *aSetPT, *aIncP, *aDecP, *aIncT, *aDecT, *aIncPT, *aDecPT, *aSetAnnotation, *aFlip, *aPeek, *aClone,
-        *aMoveToTopLibrary, *aMoveToBottomLibrary, *aMoveToGraveyard, *aMoveToExile;
+        *aMoveToTopLibrary, *aMoveToBottomLibrary, *aMoveToGraveyard, *aMoveToExile, *aDelay;
 
     bool shortcutsActive;
     int defaultNumberTopCards;
@@ -245,7 +245,7 @@ private:
 	void eventCreateRandom(const Event_CreateRandom &event);
 public:
     static const int counterAreaWidth = 55;
-    enum CardMenuActionType { cmTap, cmUntap, cmDoesntUntap, cmFlip, cmPeek, cmClone, cmMoveToTopLibrary, cmMoveToBottomLibrary, cmMoveToGraveyard, cmMoveToExile };
+    enum CardMenuActionType { cmTap, cmUntap, cmDoesntUntap, cmFlip, cmPeek, cmClone, cmMoveToTopLibrary, cmMoveToBottomLibrary, cmMoveToGraveyard, cmMoveToExile, cmDelay };
     
     enum { Type = typeOther };
     int type() const { return Type; }

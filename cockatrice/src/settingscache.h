@@ -14,7 +14,7 @@ signals:
     void langChanged();
     void picsPathChanged();
     void cardDatabasePathChanged();
-    void tokenDatabasePathChanged();
+    void customDatabasePathChanged();
     void handBgPathChanged();
     void stackBgPathChanged();
     void tableBgPathChanged();
@@ -35,7 +35,7 @@ private:
 
     QByteArray mainWindowGeometry;
     QString lang;
-    QString deckPath, replaysPath, picsPath, cardDatabasePath, tokenDatabasePath;
+    QString deckPath, replaysPath, picsPath, cardDatabasePath, customDatabasePath;
     QString handBgPath, stackBgPath, tableBgPath, playerBgPath, cardBackPicturePath;
     bool picDownload;
     bool picDownloadHq;
@@ -65,7 +65,7 @@ public:
     QString getReplaysPath() const { return replaysPath; }
     QString getPicsPath() const { return picsPath; }
     QString getCardDatabasePath() const { return cardDatabasePath; }
-    QString getTokenDatabasePath() const { return tokenDatabasePath; }
+    QString getCustomDatabasePath() const { return customDatabasePath; }
     QString getHandBgPath() const { return handBgPath; }
     QString getStackBgPath() const { return stackBgPath; }
     QString getTableBgPath() const { return tableBgPath; }
@@ -100,7 +100,7 @@ public slots:
     void setReplaysPath(const QString &_replaysPath);
     void setPicsPath(const QString &_picsPath);
     void setCardDatabasePath(const QString &_cardDatabasePath);
-    void setTokenDatabasePath(const QString &_tokenDatabasePath);
+    void setCustomDatabasePath(const QString &_customDatabasePath);
     void setHandBgPath(const QString &_handBgPath);
     void setStackBgPath(const QString &_stackBgPath);
     void setTableBgPath(const QString &_tableBgPath);

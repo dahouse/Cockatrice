@@ -44,6 +44,7 @@ private:
     QString annotation;
     bool destroyOnZoneChange;
     bool doesntUntap;
+	bool delay;
     
     Server_Card *parentCard;
     QList<Server_Card *> attachedCards;
@@ -91,6 +92,9 @@ public:
     QString setAttribute(CardAttribute attribute, const QString &avalue, bool allCards);
     
     void getInfo(ServerInfo_Card *info);
+
+	bool getDelay() const { return delay; }
+	void setDelay(const bool &_delay) { delay = _delay; }
 };
 
 #endif

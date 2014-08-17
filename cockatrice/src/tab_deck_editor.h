@@ -49,7 +49,7 @@ private slots:
     void actAnalyzeDeck();
 
     void actEditSets();
-    void actEditTokens();
+    void actEditCustom();
 
     void actClearSearch();
 
@@ -99,7 +99,7 @@ private:
 
     QMenu *deckMenu, *dbMenu;
     QAction *aNewDeck, *aLoadDeck, *aSaveDeck, *aSaveDeckAs, *aLoadDeckFromClipboard, *aSaveDeckToClipboard, *aPrintDeck, *aAnalyzeDeck, *aClose;
-    QAction *aEditSets, *aEditTokens, *aClearSearch, *aCardTextOnly;
+    QAction *aEditSets, *aEditCustom, *aClearSearch, *aCardTextOnly;
     QAction *aAddCard, *aAddCardToSideboard, *aRemoveCard, *aIncrement, *aDecrement, *aUpdatePrices;
     
     bool modified;

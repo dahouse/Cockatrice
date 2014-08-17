@@ -232,8 +232,8 @@ TabDeckEditor::TabDeckEditor(TabSupervisor *_tabSupervisor, QWidget *parent)
 
     aEditSets = new QAction(QString(), this);
     connect(aEditSets, SIGNAL(triggered()), this, SLOT(actEditSets()));
-    aEditTokens = new QAction(QString(), this);
-    connect(aEditTokens, SIGNAL(triggered()), this, SLOT(actEditTokens()));
+    aEditCustom = new QAction(QString(), this);
+    connect(aEditCustom, SIGNAL(triggered()), this, SLOT(actEditCustom()));
 
     deckMenu = new QMenu(this);
     deckMenu->addAction(aNewDeck);
@@ -253,7 +253,7 @@ TabDeckEditor::TabDeckEditor(TabSupervisor *_tabSupervisor, QWidget *parent)
 
     dbMenu = new QMenu(this);
     dbMenu->addAction(aEditSets);
-    dbMenu->addAction(aEditTokens);
+    dbMenu->addAction(aEditCustom);
     dbMenu->addSeparator();
     dbMenu->addAction(aClearSearch);
     dbMenu->addAction(aCardTextOnly);
@@ -330,7 +330,7 @@ void TabDeckEditor::retranslateUi()
     dbMenu->setTitle(tr("C&ard database"));
     
     aEditSets->setText(tr("&Edit sets..."));
-    aEditTokens->setText(tr("Edit &tokens..."));
+    aEditCustom->setText(tr("Edit &custom database..."));
 }
 
 QString TabDeckEditor::getTabText() const
@@ -531,11 +531,11 @@ void TabDeckEditor::actEditSets()
     w->show();
 }
 
-void TabDeckEditor::actEditTokens()
+void TabDeckEditor::actEditCustom()
 {
     DlgEditTokens dlg(databaseModel);
     dlg.exec();
-    db->saveToFile(settingsCache->getTokenDatabasePath(), true);
+    db->saveToFile(settingsCache->getCustomDatabasePath(), true);
 }
 
 void TabDeckEditor::actClearSearch()

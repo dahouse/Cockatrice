@@ -15,7 +15,7 @@
 #include <QDebug>
 
 AbstractCardItem::AbstractCardItem(const QString &_name, Player *_owner, int _id, QGraphicsItem *parent)
-    : ArrowTarget(_owner, parent), infoWidget(0), id(_id), name(_name), tapped(false), facedown(false), tapAngle(0), isHovered(false), realZValue(0)
+	: ArrowTarget(_owner, parent), infoWidget(0), id(_id), name(_name), tapped(false), facedown(false), tapAngle(0), isHovered(false), realZValue(0), delay(false)
 {
     setCursor(Qt::OpenHandCursor);
     setFlag(ItemIsSelectable);
@@ -122,6 +122,12 @@ void AbstractCardItem::paintPicture(QPainter *painter, const QSizeF &translatedS
         else
             bgColor = QColor(230, 230, 230);
     }
+
+	if (delay) {
+		QRectF delayRect = QRectF(boundingRect());
+		painter->fillRect(delayRect, QBrush(QColor(255, 255, 255, 128)));
+	}
+
     painter->setBrush(bgColor);
     QPen pen(Qt::black);
     pen.setWidth(2);
@@ -257,3 +263,10 @@ QVariant AbstractCardItem::itemChange(QGraphicsItem::GraphicsItemChange change, 
         return QGraphicsItem::itemChange(change, value);
 }
 
+void AbstractCardItem::setDelay(bool _delay)
+{
+	if (delay == _delay) return;
+
+	delay = _delay;
+	update();
+}

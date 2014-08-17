@@ -858,6 +858,24 @@ void MessageLogWidget::logSetActivePhase(int phase)
     appendHtml("<font color=\"green\"><b>" + tr("It is now the %1.").arg(phaseName) + "</b></font>");
 }
 
+void MessageLogWidget::logSetDelay(Player *player, CardItem *card, bool delay)
+{
+	QString str;
+	if (delay) {
+		if (isFemale(player))
+			str = tr("%1 delays %2.", "female");
+		else
+			str = tr("%1 delays %2.", "male");
+	}
+	else {
+		if (isFemale(player))
+			str = tr("%1 removes delay from %2.", "female");
+		else
+			str = tr("%1 removes delay from %2.", "male");
+	}
+	appendHtml(str.arg(sanitizeHtml(player->getName())).arg(sanitizeHtml(card->getName())));
+}
+
 void MessageLogWidget::containerProcessingStarted(const GameEventContext &_context)
 {
     if (_context.HasExtension(Context_MoveCard::ext))
@@ -912,6 +930,7 @@ void MessageLogWidget::connectToPlayer(Player *player)
     connect(player, SIGNAL(logRevealCards(Player *, CardZone *, int, QString, Player *, bool)), this, SLOT(logRevealCards(Player *, CardZone *, int, QString, Player *, bool)));
     connect(player, SIGNAL(logAlwaysRevealTopCard(Player *, CardZone *, bool)), this, SLOT(logAlwaysRevealTopCard(Player *, CardZone *, bool)));
 	connect(player, SIGNAL(logCreateRandom(Player *, int, int, QString, int)), this, SLOT(logCreateRandom(Player *, int, int, QString, int)));
+	connect(player, SIGNAL(logSetDelay(Player *, CardItem *, bool)), this, SLOT(logSetDelay(Player *, CardItem *, bool)));
 }
 
 MessageLogWidget::MessageLogWidget(const TabSupervisor *_tabSupervisor, TabGame *_game, QWidget *parent)

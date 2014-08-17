@@ -92,6 +92,7 @@ SET(cockatrice_SOURCES
     src/pending_command.cpp
     src/debugwidget.cpp
     src/dlg_create_random.cpp
+    src/customdatabasemodel.cpp
     ${VERSION_STRING_CPP}
 )
 

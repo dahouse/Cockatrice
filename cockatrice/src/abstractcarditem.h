@@ -20,6 +20,7 @@ protected:
     QString name;
     bool tapped;
     bool facedown;
+	bool delay;
     int tapAngle;
     QString color;
 private:
@@ -60,6 +61,8 @@ public:
     void setFaceDown(bool _facedown);
     void processHoverEvent();
     void deleteCardInfoPopup() { emit deleteCardInfoPopup(name); }
+	bool getDelay() const { return delay; }
+	void setDelay(bool _delay);
 protected:
     void transformPainter(QPainter *painter, const QSizeF &translatedSize, int angle);
     void mousePressEvent(QGraphicsSceneMouseEvent *event);

@@ -23,7 +23,7 @@
 #include "pb/serverinfo_card.pb.h"
 
 Server_Card::Server_Card(QString _name, int _id, int _coord_x, int _coord_y, Server_CardZone *_zone)
-    : zone(_zone), id(_id), coord_x(_coord_x), coord_y(_coord_y), name(_name), tapped(false), attacking(false), facedown(false), color(QString()), power(-1), toughness(-1), annotation(QString()), destroyOnZoneChange(false), doesntUntap(false), parentCard(0)
+	: zone(_zone), id(_id), coord_x(_coord_x), coord_y(_coord_y), name(_name), tapped(false), attacking(false), facedown(false), color(QString()), power(-1), toughness(-1), annotation(QString()), destroyOnZoneChange(false), doesntUntap(false), parentCard(0), delay(false)
 {
 }
 
@@ -46,6 +46,7 @@ void Server_Card::resetState()
     toughness = -1;
     setAnnotation(QString());
     setDoesntUntap(false);
+	setDelay(false);
 }
 
 QString Server_Card::setAttribute(CardAttribute attribute, const QString &avalue, bool allCards)
@@ -63,6 +64,7 @@ QString Server_Card::setAttribute(CardAttribute attribute, const QString &avalue
         case AttrPT: setPT(avalue); return getPT();
         case AttrAnnotation: setAnnotation(avalue); break;
         case AttrDoesntUntap: setDoesntUntap(avalue == "1"); break;
+		case AttrDelay: setDelay(avalue == "1"); break;
     }
     return avalue;
 }
@@ -143,6 +145,8 @@ void Server_Card::getInfo(ServerInfo_Card *info)
         info->set_destroy_on_zone_change(true);
     if (doesntUntap)
         info->set_doesnt_untap(true);
+	if (delay)
+		info->set_delay(true);
     
     QMapIterator<int, int> cardCounterIterator(counters);
     while (cardCounterIterator.hasNext()) {

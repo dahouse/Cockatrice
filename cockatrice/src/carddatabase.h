@@ -102,23 +102,16 @@ private:
      */
     QString simpleName;
 
-    bool isToken;
+    bool isToken, cipt, hasCmc, isCustom;
     SetList sets;
-    QString manacost;
-    QString cardtype;
-    QString powtough;
-    QString text;
+    QString manacost, cardtype, powtough, text;
     QStringList colors;
-    int loyalty;
+    int loyalty, tableRow, cmc;
     QStringMap customPicURLs, customPicURLsHq;
     MuidMap muIds;
-    bool cipt;
-    int tableRow;
     QPixmap *pixmap;
     QMap<int, QPixmap *> scaledPixmapCache;
 	CardInfo *doubleFaced;
-	int cmc;
-	bool hasCmc;
 	QStringList supertypes, types, subtypes;
 public:
     CardInfo(CardDatabase *_db,
@@ -187,6 +180,8 @@ public:
 	void addSupertype(const QString &_type) { supertypes << _type; }
 	void addType(const QString &_type) { types << _type; }
 	void addSubtype(const QString &_type) { subtypes << _type; }
+	bool getIsCustom() const { return isCustom; }
+	void setIsCustom(const bool &_isCustom) { isCustom = _isCustom; }
 
     /**
      * Simplify a name to have no punctuation and lowercase all letters, for
@@ -232,12 +227,11 @@ protected:
 	QStringList supertypes, types, subtypes;
 private:
     static const int versionNeeded;
-	bool isJson;
     void loadCardsFromXml(QXmlStreamReader &xml);
     void loadSetsFromXml(QXmlStreamReader &xml);
 
-	void loadCardsFromJson(QJsonObject &jsonSet);
-	void loadSetsFromJson(QJsonObject &json);
+	void loadCardsFromJson(QJsonObject &jsonSet, const bool &custom = false);
+	void loadSetsFromJson(QJsonObject &jsonm, const bool &custom = false);
 
     CardInfo *getCardFromMap(CardNameMap &cardMap, const QString &cardName, bool createIfNotFound);
 public:
@@ -257,7 +251,7 @@ public:
     CardSet *getSet(const QString &setName);
     QList<CardInfo *> getCardList() const { return cards.values(); }
     SetList getSetList() const;
-    LoadStatus loadFromFile(const QString &fileName);
+    LoadStatus loadFromFile(const QString &fileName, const bool &custom = false);
     bool saveToFile(const QString &fileName, bool tokens = false);
     QStringList getAllColors() const;
     QStringList getAllMainCardTypes() const;
@@ -265,9 +259,9 @@ public:
     bool getLoadSuccess() const { return loadStatus == Ok; }
     void cacheCardPixmaps(const QStringList &cardNames);
     void loadImage(CardInfo *card);
-	bool getIsJson() const { return isJson; }
 	CardInfo* getMomir(int cmc);
 	QList<CardInfo *> getCards(int cmc, int comparator, QString type);
+	QList<CardInfo *> getCustomCards();
 	QStringList getSupertypes() { return supertypes; }
 	QStringList getTypes() { return types; }
 	QStringList getSubtypes() { return subtypes; }
@@ -281,7 +275,7 @@ private slots:
     void picsPathChanged();
 
     void loadCardDatabase();
-    void loadTokenDatabase();
+    void loadCustomDatabase();
 signals:
     void cardListChanged();
     void cardAdded(CardInfo *card);

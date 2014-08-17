@@ -5,7 +5,7 @@
 
 SettingsCache::SettingsCache()
 {
-    settings = new QSettings(this);
+    settings = new QSettings("settings.ini", QSettings::IniFormat, this);
 
     lang = settings->value("personal/lang").toString();
 
@@ -13,7 +13,7 @@ SettingsCache::SettingsCache()
     replaysPath = settings->value("paths/replays").toString();
     picsPath = settings->value("paths/pics").toString();
     cardDatabasePath = settings->value("paths/carddatabase").toString();
-    tokenDatabasePath = settings->value("paths/tokendatabase").toString();
+    customDatabasePath = settings->value("paths/customdatabase").toString();
 
     handBgPath = settings->value("zonebg/hand").toString();
     stackBgPath = settings->value("zonebg/stack").toString();
@@ -83,11 +83,11 @@ void SettingsCache::setCardDatabasePath(const QString &_cardDatabasePath)
     emit cardDatabasePathChanged();
 }
 
-void SettingsCache::setTokenDatabasePath(const QString &_tokenDatabasePath)
+void SettingsCache::setCustomDatabasePath(const QString &_customDatabasePath)
 {
-    tokenDatabasePath = _tokenDatabasePath;
-    settings->setValue("paths/tokendatabase", tokenDatabasePath);
-    emit tokenDatabasePathChanged();
+    customDatabasePath = _customDatabasePath;
+    settings->setValue("paths/customdatabase", customDatabasePath);
+    emit customDatabasePathChanged();
 }
 
 void SettingsCache::setHandBgPath(const QString &_handBgPath)

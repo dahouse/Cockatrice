@@ -148,8 +148,8 @@ int main(int argc, char *argv[])
     if (!db->getLoadSuccess())
         if (db->loadCardDatabase(dataDir + "/cards.xml"))
             settingsCache->setCardDatabasePath(dataDir + "/cards.xml");
-    if (settingsCache->getTokenDatabasePath().isEmpty())
-        settingsCache->setTokenDatabasePath(dataDir + "/tokens.xml");
+    if (settingsCache->getCustomDatabasePath().isEmpty())
+        settingsCache->setCustomDatabasePath(dataDir + "/tokens.xml");
     if (!QDir(settingsCache->getDeckPath()).exists() || settingsCache->getDeckPath().isEmpty()) {
         QDir().mkpath(dataDir + "/decks");
         settingsCache->setDeckPath(dataDir + "/decks");

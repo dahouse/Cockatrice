@@ -1467,6 +1467,7 @@ Response::ResponseCode Server_Player::cmdDumpZone(const Command_DumpZone &cmd, R
             cardInfo->set_annotation(card->getAnnotation().toStdString());
             cardInfo->set_destroy_on_zone_change(card->getDestroyOnZoneChange());
             cardInfo->set_doesnt_untap(card->getDoesntUntap());
+			cardInfo->set_delay(card->getDelay());
             
             QMapIterator<int, int> cardCounterIterator(card->getCounters());
             while (cardCounterIterator.hasNext()) {
@@ -1581,6 +1582,7 @@ Response::ResponseCode Server_Player::cmdRevealCards(const Command_RevealCards &
         cardInfo->set_annotation(card->getAnnotation().toStdString());
         cardInfo->set_destroy_on_zone_change(card->getDestroyOnZoneChange());
         cardInfo->set_doesnt_untap(card->getDoesntUntap());
+		cardInfo->set_delay(card->getDelay());
         
         QMapIterator<int, int> cardCounterIterator(card->getCounters());
         while (cardCounterIterator.hasNext()) {

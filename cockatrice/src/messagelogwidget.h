@@ -83,6 +83,7 @@ public slots:
     void logSetActivePlayer(Player *player);
     void logSetActivePhase(int phase);
 	void logCreateRandom(Player *player, int cmc, int comparator, QString type, int amount);
+	void logSetDelay(Player *player, CardItem *card, bool delay);
     void containerProcessingStarted(const GameEventContext &context);
     void containerProcessingDone();
 public:

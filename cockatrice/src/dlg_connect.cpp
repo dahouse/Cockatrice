@@ -9,7 +9,7 @@
 DlgConnect::DlgConnect(QWidget *parent)
     : QDialog(parent)
 {
-    QSettings settings;
+    QSettings settings("settings.ini", QSettings::IniFormat);
     settings.beginGroup("server");
 
     hostLabel = new QLabel(tr("&Host:"));
@@ -59,7 +59,7 @@ DlgConnect::DlgConnect(QWidget *parent)
 
 void DlgConnect::actOk()
 {
-    QSettings settings;
+    QSettings settings("settings.ini", QSettings::IniFormat);
     settings.beginGroup("server");
     settings.setValue("hostname", hostEdit->text());
     settings.setValue("port", portEdit->text());

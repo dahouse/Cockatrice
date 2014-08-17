@@ -33,17 +33,17 @@ private slots:
     void picsPathButtonClicked();
     void clearDownloadedPicsButtonClicked();
     void cardDatabasePathButtonClicked();
-    void tokenDatabasePathButtonClicked();
+    void customDatabasePathButtonClicked();
     void languageBoxChanged(int index);
 private:
     QStringList findQmFiles();
     QString languageName(const QString &qmFile);
-    QLineEdit *deckPathEdit, *replaysPathEdit, *picsPathEdit, *cardDatabasePathEdit, *tokenDatabasePathEdit;
+    QLineEdit *deckPathEdit, *replaysPathEdit, *picsPathEdit, *cardDatabasePathEdit, *customDatabasePathEdit;
     QGroupBox *personalGroupBox, *pathsGroupBox;
     QComboBox *languageBox;
     QCheckBox *picDownloadCheckBox;
     QCheckBox *picDownloadHqCheckBox;
-    QLabel *languageLabel, *deckPathLabel, *replaysPathLabel, *picsPathLabel, *cardDatabasePathLabel, *tokenDatabasePathLabel;
+    QLabel *languageLabel, *deckPathLabel, *replaysPathLabel, *picsPathLabel, *cardDatabasePathLabel, *customDatabasePathLabel;
 };
 
 class AppearanceSettingsPage : public AbstractSettingsPage {

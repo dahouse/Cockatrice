@@ -87,11 +87,11 @@ GeneralSettingsPage::GeneralSettingsPage()
     QPushButton *cardDatabasePathButton = new QPushButton("...");
     connect(cardDatabasePathButton, SIGNAL(clicked()), this, SLOT(cardDatabasePathButtonClicked()));
     
-    tokenDatabasePathLabel = new QLabel;
-    tokenDatabasePathEdit = new QLineEdit(settingsCache->getTokenDatabasePath());
-    tokenDatabasePathEdit->setReadOnly(true);
-    QPushButton *tokenDatabasePathButton = new QPushButton("...");
-    connect(tokenDatabasePathButton, SIGNAL(clicked()), this, SLOT(tokenDatabasePathButtonClicked()));
+    customDatabasePathLabel = new QLabel;
+	customDatabasePathEdit = new QLineEdit(settingsCache->getCustomDatabasePath());
+    customDatabasePathEdit->setReadOnly(true);
+    QPushButton *customDatabasePathButton = new QPushButton("...");
+    connect(customDatabasePathButton, SIGNAL(clicked()), this, SLOT(customDatabasePathButtonClicked()));
     
     QGridLayout *pathsGrid = new QGridLayout;
     pathsGrid->addWidget(deckPathLabel, 0, 0);
@@ -106,9 +106,9 @@ GeneralSettingsPage::GeneralSettingsPage()
     pathsGrid->addWidget(cardDatabasePathLabel, 3, 0);
     pathsGrid->addWidget(cardDatabasePathEdit, 3, 1);
     pathsGrid->addWidget(cardDatabasePathButton, 3, 2);
-    pathsGrid->addWidget(tokenDatabasePathLabel, 4, 0);
-    pathsGrid->addWidget(tokenDatabasePathEdit, 4, 1);
-    pathsGrid->addWidget(tokenDatabasePathButton, 4, 2);
+    pathsGrid->addWidget(customDatabasePathLabel, 4, 0);
+    pathsGrid->addWidget(customDatabasePathEdit, 4, 1);
+    pathsGrid->addWidget(customDatabasePathButton, 4, 2);
     pathsGroupBox = new QGroupBox;
     pathsGroupBox->setLayout(pathsGrid);
 
@@ -199,14 +199,14 @@ void GeneralSettingsPage::cardDatabasePathButtonClicked()
     settingsCache->setCardDatabasePath(path);
 }
 
-void GeneralSettingsPage::tokenDatabasePathButtonClicked()
+void GeneralSettingsPage::customDatabasePathButtonClicked()
 {
     QString path = QFileDialog::getOpenFileName(this, tr("Choose path"));
     if (path.isEmpty())
         return;
     
-    tokenDatabasePathEdit->setText(path);
-    settingsCache->setTokenDatabasePath(path);
+    customDatabasePathEdit->setText(path);
+    settingsCache->setCustomDatabasePath(path);
 }
 
 void GeneralSettingsPage::languageBoxChanged(int index)
@@ -225,7 +225,7 @@ void GeneralSettingsPage::retranslateUi()
     replaysPathLabel->setText(tr("Replays directory:"));
     picsPathLabel->setText(tr("Pictures directory:"));
     cardDatabasePathLabel->setText(tr("Card database:"));
-    tokenDatabasePathLabel->setText(tr("Token database:"));
+    customDatabasePathLabel->setText(tr("Custom database:"));
 }
 
 AppearanceSettingsPage::AppearanceSettingsPage()
@@ -630,7 +630,7 @@ MessagesSettingsPage::MessagesSettingsPage()
     messageToolBar->addAction(aAdd);
     messageToolBar->addAction(aRemove);
 
-    QSettings settings;
+    QSettings settings("messages.ini", QSettings::IniFormat);
     settings.beginGroup("messages");
     int count = settings.value("count", 0).toInt();
     for (int i = 0; i < count; i++)
@@ -647,7 +647,7 @@ MessagesSettingsPage::MessagesSettingsPage()
 
 void MessagesSettingsPage::storeSettings()
 {
-    QSettings settings;
+	QSettings settings("messages.ini", QSettings::IniFormat);
     settings.beginGroup("messages");
     settings.setValue("count", messageList->count());
     for (int i = 0; i < messageList->count(); i++)

@@ -16,7 +16,7 @@ DlgFilterGames::DlgFilterGames(const QMap<int, QString> &_allGameTypes, QWidget 
     : QDialog(parent),
       allGameTypes(_allGameTypes)
 {
-    QSettings settings;
+    QSettings settings("settings.ini", QSettings::IniFormat);
     settings.beginGroup("filter_games");
 
     unavailableGamesVisibleCheckBox = new QCheckBox(tr("Show &unavailable games"));
@@ -126,7 +126,7 @@ DlgFilterGames::DlgFilterGames(const QMap<int, QString> &_allGameTypes, QWidget 
 }
 
 void DlgFilterGames::actOk() {
-    QSettings settings;
+    QSettings settings("settings.ini", QSettings::IniFormat);
     settings.beginGroup("filter_games");
     settings.setValue(
         "unavailable_games_visible",
